@@ -1,33 +1,33 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Canje de Entradas - Achorao</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #1a1a1a; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; flex-direction: column; padding: 20px;}
+        body { font-family: Arial, sans-serif; background-color: #1a1a1a; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; flex-direction: column; padding: 15px;}
         
-        /* Cajas de Interfaz */
-        .login-box { background: #333; padding: 30px; border-radius: 10px; text-align: center; max-width: 400px; width: 90%; }
-        input { padding: 10px; margin: 10px 0; width: 80%; border-radius: 5px; border: none; }
-        button { padding: 10px 20px; background: #e50914; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px; text-transform: uppercase; }
+        .login-box { background: #333; padding: 30px; border-radius: 10px; text-align: center; max-width: 400px; width: 100%; box-sizing: border-box; }
+        input { padding: 10px; margin: 10px 0; width: 90%; border-radius: 5px; border: none; box-sizing: border-box;}
+        button { padding: 10px 20px; background: #e50914; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px; text-transform: uppercase; width: 90%; }
         button:disabled { background: #555; cursor: not-allowed; }
         
-        /* Sala de Cine */
-        #sala-cine, #ticket-final { display: none; text-align: center; margin-top: 20px; width: 100%; max-width: 900px; }
-        .pantalla { background: linear-gradient(to bottom, #555, #333); height: 40px; width: 80%; margin: 0 auto 40px auto; border-radius: 50% 50% 0 0; display: flex; align-items: center; justify-content: center; font-size: 14px; letter-spacing: 10px; color: #aaa; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        #sala-cine, #ticket-final { display: none; text-align: center; margin-top: 10px; width: 100%; max-width: 900px; }
+        .pantalla { background: linear-gradient(to bottom, #555, #333); height: 40px; width: 80%; margin: 0 auto 30px auto; border-radius: 50% 50% 0 0; display: flex; align-items: center; justify-content: center; font-size: 14px; letter-spacing: 10px; color: #aaa; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        
         .grid-asientos { display: grid; grid-template-columns: repeat(23, 1fr); gap: 4px; margin: 0 auto; justify-content: center;}
         .asiento { background: #fff; color: #000; width: 100%; aspect-ratio: 1; border-radius: 4px; font-size: 9px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; }
         
-        /* Estados de Asientos */
-        .asiento.seleccionado { background: #e50914; color: white; border: 2px solid #fff; }
+        /* Estados de Asientos - Ajustados para ser exactos al plano */
+        .asiento.seleccionado { background: #e50914; color: white; border: 1px solid #fff; }
         .asiento.ocupado { background: #555; color: #222; cursor: not-allowed; }
+        .asiento.nodisponible { background: #444; color: #999; cursor: not-allowed; font-size: 12px;} /* Para las 'X' de Cinemark */
         .asiento.bloqueado-lateral { background: #111; color: #333; cursor: not-allowed; border: 1px solid #222; }
+        .asiento.vacio { visibility: hidden; } /* Para los pasillos y huecos sin asientos */
         
-        .leyenda { margin-top: 30px; font-size: 14px; background: #222; padding: 10px; border-radius: 8px; display: inline-block;}
+        .leyenda { margin-top: 20px; font-size: 12px; background: #222; padding: 10px; border-radius: 8px; display: inline-block;}
         
-        /* Diseño del Ticket Físico */
-        .ticket-box { background: #fdfdfd; color: #111; width: 320px; margin: 0 auto; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); position: relative; overflow: hidden; text-align: left; }
+        .ticket-box { background: #fdfdfd; color: #111; width: 100%; max-width: 320px; margin: 0 auto; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); position: relative; overflow: hidden; text-align: left; }
         .ticket-img { width: 100%; height: 200px; object-fit: cover; border-bottom: 3px dashed #bbb; }
         .ticket-content { padding: 25px; position: relative; }
         .ticket-content h2 { margin: 0 0 15px 0; font-size: 22px; text-transform: uppercase; color: #e50914; border-bottom: 2px solid #eee; padding-bottom: 10px;}
@@ -37,6 +37,14 @@
         .recorte.izq { left: -15px; }
         .recorte.der { right: -15px; }
         .disclaimer { font-size: 11px; color: #777; margin-top: 20px; line-height: 1.4; text-align: justify;}
+
+        /* Ajustes para que encaje perfecto en celulares */
+        @media (max-width: 600px) {
+            .grid-asientos { gap: 2px; }
+            .asiento { font-size: 7px; border-radius: 2px; }
+            .asiento.nodisponible { font-size: 9px; }
+            .pantalla { height: 25px; font-size: 10px; letter-spacing: 5px; margin-bottom: 20px;}
+        }
     </style>
 </head>
 <body>
@@ -50,12 +58,12 @@
     </div>
 
     <div id="sala-cine">
-        <h2>Selecciona tus Asientos</h2>
+        <h2>Tus Asientos</h2>
         <p id="info-cliente"></p>
         <div class="pantalla">PANTALLA</div>
         <div class="grid-asientos" id="contenedor-asientos"></div>
         <div class="leyenda">
-            ⬜ Tu Zona &nbsp;&nbsp; 🟥 Seleccionado &nbsp;&nbsp; ⬛ Ocupado &nbsp;&nbsp; ⬛ Laterales (No Disp.)
+            ⬜ Disponible &nbsp; 🟥 Elegido &nbsp; ⬛ Ocupado &nbsp; ✖️ No Disp.
         </div>
         <br><br>
         <button id="btn-confirmar" style="display:none;" onclick="confirmarAsientos()">Confirmar Mis Asientos</button>
@@ -65,7 +73,6 @@
     <div id="ticket-final">
         <p style="color: #4CAF50; font-weight: bold; margin-bottom: 20px;">¡Captura esta pantalla!</p>
         <div class="ticket-box">
-            <!-- Imagen del póster que solicitaste -->
             <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQq3Wtwc3T9NThwYT08_HR5Ih__G7j4W__uqAYMwKs0GwFfGYujpeaEKCw&s=10" class="ticket-img">
             <div class="recorte izq"></div>
             <div class="recorte der"></div>
@@ -161,26 +168,57 @@
             contenedor.innerHTML = ""; 
             const filas = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S'];
             
+            // Asientos exactos bloqueados con 'X' en el plano
+            const asientosX = ['F9','F8', 'I12','I11', 'J12','J11', 'K12','K11', 'L18','L17', 'P9','P8', 'Q12','Q11'];
+
             filas.forEach(fila => {
-                // Ahora generamos desde la columna 23 hasta la 1 (como el mapa real)
                 for (let num = 23; num >= 1; num--) {
                     let idAsiento = `${fila}${num}`;
                     let div = document.createElement('div');
                     div.className = 'asiento';
                     div.textContent = idAsiento;
                     
-                    // Bloqueamos los laterales (23 al 19 y 5 al 1)
+                    // Lógica para clonar el plano real:
+                    
+                    // 1. Laterales Bloqueados (23-19 y 5-1)
                     if (num > 18 || num < 6) {
-                        div.classList.add('bloqueado-lateral');
-                    } else {
-                        // Zona central (18 al 6)
-                        if (todosLosAsientosOcupados.includes(idAsiento)) {
-                            div.classList.add('ocupado');
+                        // Huecos vacíos en la fila S lateral
+                        if (fila === 'S' && (num === 21 || num === 20 || num === 19 || num === 5)) {
+                            div.classList.add('vacio');
                         } else {
-                            div.onclick = () => seleccionarAsiento(div, idAsiento);
+                            div.classList.add('bloqueado-lateral');
+                        }
+                    } 
+                    // 2. Zona Central (18-6)
+                    else {
+                        // Huecos vacíos gigantes (Filas M, N, O enteras)
+                        if (fila === 'M' || fila === 'N' || fila === 'O') {
+                            div.classList.add('vacio');
+                        } 
+                        // Huecos vacíos en P, Q, R, S
+                        else if (fila === 'P' && (num === 18 || num === 7 || num === 6)) {
+                            div.classList.add('vacio');
+                        }
+                        else if ((fila === 'Q' || fila === 'R') && (num === 18 || num === 6)) {
+                            div.classList.add('vacio');
+                        }
+                        else if (fila === 'S' && (num === 18 || num <= 13)) {
+                            div.classList.add('vacio');
+                        }
+                        // Asientos marcados con 'X'
+                        else if (asientosX.includes(idAsiento)) {
+                            div.classList.add('nodisponible');
+                            div.textContent = "X";
+                        }
+                        // Asientos reales y disponibles
+                        else {
+                            if (todosLosAsientosOcupados.includes(idAsiento)) {
+                                div.classList.add('ocupado');
+                            } else {
+                                div.onclick = () => seleccionarAsiento(div, idAsiento);
+                            }
                         }
                     }
-                    
                     contenedor.appendChild(div);
                 }
             });
