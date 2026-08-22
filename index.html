@@ -18,12 +18,12 @@
         .grid-asientos { display: grid; grid-template-columns: repeat(23, 1fr); gap: 4px; margin: 0 auto; justify-content: center;}
         .asiento { background: #fff; color: #000; width: 100%; aspect-ratio: 1; border-radius: 4px; font-size: 9px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; }
         
-        /* Estados de Asientos - Ajustados para ser exactos al plano */
+        /* Estados de Asientos */
         .asiento.seleccionado { background: #e50914; color: white; border: 1px solid #fff; }
         .asiento.ocupado { background: #555; color: #222; cursor: not-allowed; }
-        .asiento.nodisponible { background: #444; color: #999; cursor: not-allowed; font-size: 12px;} /* Para las 'X' de Cinemark */
+        .asiento.nodisponible { background: #444; color: #999; cursor: not-allowed; font-size: 12px;} 
         .asiento.bloqueado-lateral { background: #111; color: #333; cursor: not-allowed; border: 1px solid #222; }
-        .asiento.vacio { visibility: hidden; } /* Para los pasillos y huecos sin asientos */
+        .asiento.vacio { visibility: hidden; } 
         
         .leyenda { margin-top: 20px; font-size: 12px; background: #222; padding: 10px; border-radius: 8px; display: inline-block;}
         
@@ -38,7 +38,6 @@
         .recorte.der { right: -15px; }
         .disclaimer { font-size: 11px; color: #777; margin-top: 20px; line-height: 1.4; text-align: justify;}
 
-        /* Ajustes para que encaje perfecto en celulares */
         @media (max-width: 600px) {
             .grid-asientos { gap: 2px; }
             .asiento { font-size: 7px; border-radius: 2px; }
@@ -168,8 +167,8 @@
             contenedor.innerHTML = ""; 
             const filas = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S'];
             
-            // Asientos exactos bloqueados con 'X' en el plano
-            const asientosX = ['F9','F8', 'I12','I11', 'J12','J11', 'K12','K11', 'L18','L17', 'P9','P8', 'Q12','Q11'];
+            // Asientos exactos bloqueados con 'X' en el plano (ACTUALIZADO)
+            const asientosX = ['F9','F8', 'I12','I11', 'J12','J11', 'K14','K13','K12', 'L18','L17', 'P8','P7', 'Q12','Q11'];
 
             filas.forEach(fila => {
                 for (let num = 23; num >= 1; num--) {
@@ -178,25 +177,19 @@
                     div.className = 'asiento';
                     div.textContent = idAsiento;
                     
-                    // Lógica para clonar el plano real:
-                    
-                    // 1. Laterales Bloqueados (23-19 y 5-1)
                     if (num > 18 || num < 6) {
-                        // Huecos vacíos en la fila S lateral
                         if (fila === 'S' && (num === 21 || num === 20 || num === 19 || num === 5)) {
                             div.classList.add('vacio');
                         } else {
                             div.classList.add('bloqueado-lateral');
                         }
                     } 
-                    // 2. Zona Central (18-6)
                     else {
-                        // Huecos vacíos gigantes (Filas M, N, O enteras)
                         if (fila === 'M' || fila === 'N' || fila === 'O') {
                             div.classList.add('vacio');
                         } 
-                        // Huecos vacíos en P, Q, R, S
-                        else if (fila === 'P' && (num === 18 || num === 7 || num === 6)) {
+                        // Fila P: P7 y P8 ahora son visibles (tienen X), solo P18 y P6 son espacios vacíos
+                        else if (fila === 'P' && (num === 18 || num === 6)) {
                             div.classList.add('vacio');
                         }
                         else if ((fila === 'Q' || fila === 'R') && (num === 18 || num === 6)) {
@@ -205,12 +198,10 @@
                         else if (fila === 'S' && (num === 18 || num <= 13)) {
                             div.classList.add('vacio');
                         }
-                        // Asientos marcados con 'X'
                         else if (asientosX.includes(idAsiento)) {
                             div.classList.add('nodisponible');
                             div.textContent = "X";
                         }
-                        // Asientos reales y disponibles
                         else {
                             if (todosLosAsientosOcupados.includes(idAsiento)) {
                                 div.classList.add('ocupado');
