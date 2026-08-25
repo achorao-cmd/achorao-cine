@@ -16,16 +16,16 @@
         .pantalla { background: linear-gradient(to bottom, #777, #333); height: 35px; width: 85%; margin: 0 auto 25px auto; border-radius: 50% 50% 0 0; display: flex; align-items: center; justify-content: center; font-size: 12px; letter-spacing: 8px; color: #ccc; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
         
         .grid-asientos { display: grid; grid-template-columns: repeat(5, 1fr) 12px repeat(13, 1fr) 12px repeat(5, 1fr); gap: 3px; margin: 0 auto; justify-content: center; overflow-x: auto; padding-bottom: 10px; }
-        .asiento { background: #fff; color: #000; width: 100%; aspect-ratio: 1; border-radius: 3px; font-size: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; user-select: none; }
+        /* ⬆️ AUMENTAMOS EL FONT-SIZE EN PC A 11px ⬆️ */
+        .asiento { background: #fff; color: #000; width: 100%; aspect-ratio: 1; border-radius: 3px; font-size: 11px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; user-select: none; }
         .pasillo { background: transparent; pointer-events: none; }
         
         .asiento.seleccionado { background: #e50914; color: white; border: 1px solid #fff; }
         .asiento.ocupado { background: #555; color: #222; cursor: not-allowed; }
-        .asiento.nodisponible { background: #333; color: #777; cursor: not-allowed; font-size: 10px; } 
         .asiento.bloqueado-lateral { background: #181818; color: #333; cursor: not-allowed; border: 1px solid #222; }
         .asiento.vacio { visibility: hidden; } 
         
-        .leyenda { margin-top: 20px; font-size: 12px; background: #222; padding: 10px 15px; border-radius: 8px; display: inline-flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+        .leyenda { margin-top: 20px; font-size: 12px; background: #222; padding: 10px 15px; border-radius: 8px; display: inline-flex; gap: 15px; flex-wrap: wrap; justify-content: center; }
         
         .ticket-box { background: #fff; color: #111; width: 100%; max-width: 320px; margin: 0 auto; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); position: relative; overflow: hidden; text-align: center; }
         .ticket-img { width: 100%; height: 180px; object-fit: cover; border-bottom: 2px dashed #ccc; }
@@ -49,7 +49,8 @@
 
         @media (max-width: 600px) {
             .grid-asientos { gap: 2px; grid-template-columns: repeat(5, 1fr) 6px repeat(13, 1fr) 6px repeat(5, 1fr); }
-            .asiento { font-size: 6px; border-radius: 2px; }
+            /* ⬆️ AUMENTAMOS EL FONT-SIZE EN MÓVIL A 8px ⬆️ */
+            .asiento { font-size: 8px; border-radius: 2px; }
             .pantalla { height: 22px; font-size: 9px; letter-spacing: 4px; }
         }
     </style>
@@ -85,11 +86,12 @@
         <p id="info-cliente"></p>
         <div class="pantalla">PANTALLA</div>
         <div class="grid-asientos" id="contenedor-asientos"></div>
+        
+        <!-- LEYENDA ACTUALIZADA (Sin emojis de sistema, usa CSS puro) -->
         <div class="leyenda">
-            <span>⬜ Disponible</span>
-            <span>🟥 Elegido</span>
-            <span>⬛ Ocupado</span>
-            <span>✖️ No Disponible</span>
+            <span style="display:flex; align-items:center; gap:6px;"><div style="width:14px; height:14px; background:#fff; border-radius:3px;"></div> Disponible</span>
+            <span style="display:flex; align-items:center; gap:6px;"><div style="width:14px; height:14px; background:#e50914; border-radius:3px;"></div> Elegido</span>
+            <span style="display:flex; align-items:center; gap:6px;"><div style="width:14px; height:14px; background:#555; border-radius:3px;"></div> Ocupado</span>
         </div>
         <br><br>
         <button id="btn-confirmar" style="display:none;" onclick="confirmarAsientos()">Confirmar Mis Asientos</button>
@@ -130,7 +132,6 @@
         let dniActual = "";
         let todosLosAsientosOcupados = [];
 
-        // Lógica para detectar si entró el Staff escaneando un QR
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
             const pedidoAValidar = urlParams.get('validar');
@@ -142,7 +143,6 @@
             }
         };
 
-        // Función secreta que solo corre cuando escanean el QR
         async function ejecutarValidacionStaff(pedidoId) {
             const msjVal = document.getElementById('msj-validacion');
             const cajaDatos = document.getElementById('datos-validacion');
@@ -250,7 +250,6 @@
             contenedor.innerHTML = ""; 
             const filas = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S'];
             
-            // Asientos ocupados ACTUALIZADO (+S17-S14 y +R20,R19,R5,R4 para cuadrar en 200)
             const asientosX = ['D20','D19','D18','D17','D16','D15','D14','D13','D12','D11','D10','D9','D8','D7','D6','D5','D4','S17','S16','S15','S14', 'R20','R19','R14','R13','R12','R11','R10','R5','R4','R17','R16','R15','R9','R8','R7'];
 
             filas.forEach(fila => {
@@ -264,21 +263,21 @@
                     div.textContent = idAsiento;
                     
                     if (num <= 18 && num >= 6) {
-                        if (fila === 'A' || fila === 'B' || fila === 'C') { div.classList.add('nodisponible'); div.textContent = "X"; }
+                        // AHORA LAS A, B, C SE COMPORTAN COMO OCUPADOS
+                        if (fila === 'A' || fila === 'B' || fila === 'C') { div.classList.add('ocupado'); }
                         else if (fila === 'M' || fila === 'N' || fila === 'O') { div.classList.add('vacio'); } 
                         else if (fila === 'P' && (num === 18 || num === 6)) { div.classList.add('vacio'); }
                         else if ((fila === 'Q' || fila === 'R') && (num === 18 || num === 6)) { div.classList.add('vacio'); }
                         else if (fila === 'S' && (num === 18 || num <= 13)) { div.classList.add('vacio'); }
-                        else if (asientosX.includes(idAsiento)) { div.classList.add('nodisponible'); div.textContent = "X"; }
+                        // AHORA LOS BLOQUEADOS SE COMPORTAN COMO OCUPADOS
+                        else if (asientosX.includes(idAsiento)) { div.classList.add('ocupado'); }
                         else { evaluarEstadoAsiento(div, idAsiento); }
                     } 
                     else {
-                        // AHORA:
-                        // AHORA:
                         let esLateralHabilitado = ((fila >= 'D' && fila <= 'R') && (num === 4 || num === 5 || num === 19 || num === 20)) || ((fila >= 'E' && fila <= 'Q') && (num === 21 || num === 3));
                         if (esLateralHabilitado) {
                             if (asientosX.includes(idAsiento)) {
-                                div.classList.add('nodisponible'); div.textContent = "X";
+                                div.classList.add('ocupado'); 
                             } else {
                                 evaluarEstadoAsiento(div, idAsiento);
                             }
