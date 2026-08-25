@@ -16,13 +16,15 @@
         .pantalla { background: linear-gradient(to bottom, #777, #333); height: 35px; width: 85%; margin: 0 auto 25px auto; border-radius: 50% 50% 0 0; display: flex; align-items: center; justify-content: center; font-size: 12px; letter-spacing: 8px; color: #ccc; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
         
         .grid-asientos { display: grid; grid-template-columns: repeat(5, 1fr) 12px repeat(13, 1fr) 12px repeat(5, 1fr); gap: 3px; margin: 0 auto; justify-content: center; overflow-x: auto; padding-bottom: 10px; }
-        /* ⬆️ AUMENTAMOS EL FONT-SIZE EN PC A 11px ⬆️ */
         .asiento { background: #fff; color: #000; width: 100%; aspect-ratio: 1; border-radius: 3px; font-size: 11px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; user-select: none; }
         .pasillo { background: transparent; pointer-events: none; }
         
         .asiento.seleccionado { background: #e50914; color: white; border: 1px solid #fff; }
+        /* OCUPADOS REALES (Excel) = GRIS */
         .asiento.ocupado { background: #555; color: #222; cursor: not-allowed; }
-        .asiento.bloqueado-lateral { background: #181818; color: #333; cursor: not-allowed; border: 1px solid #222; }
+        /* NO DISPONIBLES / BLOQUEADOS = NEGRO (Sin X) */
+        .asiento.nodisponible { background: #151515; color: #333; cursor: not-allowed; border: 1px solid #222; } 
+        .asiento.bloqueado-lateral { background: #151515; color: #333; cursor: not-allowed; border: 1px solid #222; }
         .asiento.vacio { visibility: hidden; } 
         
         .leyenda { margin-top: 20px; font-size: 12px; background: #222; padding: 10px 15px; border-radius: 8px; display: inline-flex; gap: 15px; flex-wrap: wrap; justify-content: center; }
@@ -40,7 +42,6 @@
         .btn-share { background: #25D366; color: white; margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .disclaimer { font-size: 11px; color: #666; margin-top: 15px; line-height: 1.3; text-align: justify; }
 
-        /* Estilos del Modo Validación (Staff) */
         .val-success { border-top: 5px solid #4CAF50; }
         .val-error { border-top: 5px solid #e50914; }
         .val-data { background: #222; padding: 15px; border-radius: 5px; text-align: left; margin-top: 15px; color: white; }
@@ -49,7 +50,6 @@
 
         @media (max-width: 600px) {
             .grid-asientos { gap: 2px; grid-template-columns: repeat(5, 1fr) 6px repeat(13, 1fr) 6px repeat(5, 1fr); }
-            /* ⬆️ AUMENTAMOS EL FONT-SIZE EN MÓVIL A 8px ⬆️ */
             .asiento { font-size: 8px; border-radius: 2px; }
             .pantalla { height: 22px; font-size: 9px; letter-spacing: 4px; }
         }
@@ -57,7 +57,6 @@
 </head>
 <body>
 
-    <!-- Pantalla 1: Ingreso de Usuario -->
     <div class="login-box" id="login-section">
         <h2>🎬 Canjea tu Entrada</h2>
         <input type="text" id="pedido" placeholder="N° de Pedido (Ej. 17325)">
@@ -66,7 +65,6 @@
         <p id="mensaje"></p>
     </div>
 
-    <!-- Pantalla 2: Validación STAFF (Oculta por defecto) -->
     <div class="validacion-box" id="pantalla-validacion">
         <h2>🛡️ Validación Staff</h2>
         <p id="msj-validacion">Consultando base de datos segura...</p>
@@ -80,25 +78,24 @@
         <button onclick="window.location.href = window.location.pathname" style="margin-top: 20px; background: #555;">Ir al Inicio</button>
     </div>
 
-    <!-- Pantalla 3: Sala de Cine -->
     <div id="sala-cine">
         <h2>Selecciona tus Asientos</h2>
         <p id="info-cliente"></p>
         <div class="pantalla">PANTALLA</div>
         <div class="grid-asientos" id="contenedor-asientos"></div>
         
-        <!-- LEYENDA ACTUALIZADA (Sin emojis de sistema, usa CSS puro) -->
+        <!-- LEYENDA CON LOS 4 COLORES CLAROS -->
         <div class="leyenda">
             <span style="display:flex; align-items:center; gap:6px;"><div style="width:14px; height:14px; background:#fff; border-radius:3px;"></div> Disponible</span>
             <span style="display:flex; align-items:center; gap:6px;"><div style="width:14px; height:14px; background:#e50914; border-radius:3px;"></div> Elegido</span>
             <span style="display:flex; align-items:center; gap:6px;"><div style="width:14px; height:14px; background:#555; border-radius:3px;"></div> Ocupado</span>
+            <span style="display:flex; align-items:center; gap:6px;"><div style="width:14px; height:14px; background:#151515; border: 1px solid #333; border-radius:3px;"></div> No Disp.</span>
         </div>
         <br><br>
         <button id="btn-confirmar" style="display:none;" onclick="confirmarAsientos()">Confirmar Mis Asientos</button>
         <p id="mensaje-confirmacion"></p>
     </div>
 
-    <!-- Pantalla 4: Ticket Virtual -->
     <div id="ticket-final">
         <p style="color: #4CAF50; font-weight: bold; margin-bottom: 15px;">¡Entrada Confirmada!</p>
         <div class="ticket-box">
@@ -109,7 +106,6 @@
                 <p><b>Asientos:</b> <span id="ticket-asientos" class="ticket-asientos"></span></p>
                 <p><b>Snacks:</b> <span id="ticket-snacks"></span></p>
                 
-                <!-- QR Link Anti-Fraude -->
                 <div class="qr-container">
                     <img id="qr-image" src="" alt="Código QR de Validación">
                     <span style="font-size: 10px; color: #888; display: block; margin-top: 4px;">Solo uso de Staff Achorao</span>
@@ -122,7 +118,6 @@
     </div>
 
     <script>
-        // ⚠️ REEMPLAZA CON TU ENLACE LARGO
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwa-fIjQ3RR7hSpMfuc76BNhz495XXY6Rn2WoNkrNyYqRHUefW3mb8qC2ePkTd1PX5KaQ/exec";
         
         let entradasPermitidas = 0;
@@ -135,7 +130,6 @@
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
             const pedidoAValidar = urlParams.get('validar');
-            
             if (pedidoAValidar) {
                 document.getElementById('login-section').style.display = 'none';
                 document.getElementById('pantalla-validacion').style.display = 'block';
@@ -150,25 +144,21 @@
                 const respuesta = await fetch(GOOGLE_SCRIPT_URL);
                 const datos = await respuesta.json();
                 let clienteEncontrado = null;
-
                 for (let i = 1; i < datos.length; i++) {
                     if (String(datos[i][0]).trim().toLowerCase() === String(pedidoId).trim().toLowerCase()) {
                         clienteEncontrado = datos[i];
                         break;
                     }
                 }
-
                 if (clienteEncontrado) {
                     msjVal.textContent = "✅ TICKET ORIGINAL ENCONTRADO";
                     msjVal.style.color = "#4CAF50";
                     cajaDatos.style.display = "block";
                     document.getElementById('pantalla-validacion').classList.add('val-success');
-                    
                     document.getElementById('val-pedido').textContent = clienteEncontrado[0];
                     document.getElementById('val-dni').textContent = clienteEncontrado[1];
                     document.getElementById('val-entradas').textContent = clienteEncontrado[2];
                     document.getElementById('val-snacks').textContent = clienteEncontrado[3] || "Ninguno";
-                    
                     let asientosAsignados = String(clienteEncontrado[5] || "").trim();
                     document.getElementById('val-asientos').textContent = asientosAsignados === "" ? "NO HA ELEGIDO" : asientosAsignados;
                 } else {
@@ -176,9 +166,7 @@
                     msjVal.style.color = "#e50914";
                     document.getElementById('pantalla-validacion').classList.add('val-error');
                 }
-            } catch (error) {
-                msjVal.textContent = "Error al conectar con la base de datos.";
-            }
+            } catch (error) { msjVal.textContent = "Error al conectar con la base de datos."; }
         }
 
         async function verificarDatos() {
@@ -188,7 +176,6 @@
             const btnIngresar = document.getElementById('btn-ingresar');
 
             if (!pedido || !dni) { mensajeEl.textContent = "Completa ambos campos."; return; }
-            
             mensajeEl.textContent = "Buscando tu pedido... 🍿";
             mensajeEl.style.color = "white";
             btnIngresar.disabled = true;
@@ -204,40 +191,32 @@
                     let pedidoFila = String(datos[i][0]).trim().toLowerCase();
                     let dniFila = String(datos[i][1]).trim().toLowerCase();
                     let asientosFila = String(datos[i][5] || "").trim();
-
                     if (asientosFila !== "") {
                         let asientosArray = asientosFila.split(",").map(a => a.trim());
                         todosLosAsientosOcupados = todosLosAsientosOcupados.concat(asientosArray);
                     }
-
                     if (pedidoFila === pedido.toLowerCase() && dniFila === dni.toLowerCase()) {
-                        encontrado = true;
-                        datosCliente = datos[i];
+                        encontrado = true; datosCliente = datos[i];
                     }
                 }
 
                 if (encontrado) {
-                    pedidoActual = datosCliente[0];
-                    dniActual = datosCliente[1];
+                    pedidoActual = datosCliente[0]; dniActual = datosCliente[1];
                     entradasPermitidas = parseInt(datosCliente[2]) || 0;
                     snacksActual = datosCliente[3] || "Sin combos";
                     let misAsientosYaElegidos = String(datosCliente[5] || "").trim();
 
                     document.getElementById('login-section').style.display = 'none';
-
                     if (misAsientosYaElegidos !== "") {
                         mostrarTicket(misAsientosYaElegidos);
                     } else if (entradasPermitidas > 0) {
                         document.getElementById('sala-cine').style.display = 'block';
                         document.getElementById('info-cliente').innerHTML = `Tienes <b>${entradasPermitidas} entradas</b> por ubicar.`;
                         generarAsientos();
-                    } else {
-                        mostrarTicket("Solo Combos / Snacks");
-                    }
+                    } else { mostrarTicket("Solo Combos / Snacks"); }
                 } else {
                     mensajeEl.textContent = "Datos incorrectos o no encontrados."; 
-                    mensajeEl.style.color = "#e50914";
-                    btnIngresar.disabled = false;
+                    mensajeEl.style.color = "#e50914"; btnIngresar.disabled = false;
                 }
             } catch (error) {
                 mensajeEl.textContent = "Error de conexión. Intenta nuevamente.";
@@ -250,6 +229,7 @@
             contenedor.innerHTML = ""; 
             const filas = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S'];
             
+            // 👇 AQUÍ ES DONDE AGREGAS TUS 4 ASIENTOS LUEGO. Solo escríbelos como 'A1', 'B2', etc. separados por comas.
             const asientosX = ['D20','D19','D18','D17','D16','D15','D14','D13','D12','D11','D10','D9','D8','D7','D6','D5','D4','S17','S16','S15','S14', 'R20','R19','R14','R13','R12','R11','R10','R5','R4','R17','R16','R15','R9','R8','R7'];
 
             filas.forEach(fila => {
@@ -263,21 +243,19 @@
                     div.textContent = idAsiento;
                     
                     if (num <= 18 && num >= 6) {
-                        // AHORA LAS A, B, C SE COMPORTAN COMO OCUPADOS
-                        if (fila === 'A' || fila === 'B' || fila === 'C') { div.classList.add('ocupado'); }
+                        if (fila === 'A' || fila === 'B' || fila === 'C') { div.classList.add('nodisponible'); }
                         else if (fila === 'M' || fila === 'N' || fila === 'O') { div.classList.add('vacio'); } 
                         else if (fila === 'P' && (num === 18 || num === 6)) { div.classList.add('vacio'); }
                         else if ((fila === 'Q' || fila === 'R') && (num === 18 || num === 6)) { div.classList.add('vacio'); }
                         else if (fila === 'S' && (num === 18 || num <= 13)) { div.classList.add('vacio'); }
-                        // AHORA LOS BLOQUEADOS SE COMPORTAN COMO OCUPADOS
-                        else if (asientosX.includes(idAsiento)) { div.classList.add('ocupado'); }
+                        else if (asientosX.includes(idAsiento)) { div.classList.add('nodisponible'); }
                         else { evaluarEstadoAsiento(div, idAsiento); }
                     } 
                     else {
                         let esLateralHabilitado = ((fila >= 'D' && fila <= 'R') && (num === 4 || num === 5 || num === 19 || num === 20)) || ((fila >= 'E' && fila <= 'Q') && (num === 21 || num === 3));
                         if (esLateralHabilitado) {
                             if (asientosX.includes(idAsiento)) {
-                                div.classList.add('ocupado'); 
+                                div.classList.add('nodisponible'); 
                             } else {
                                 evaluarEstadoAsiento(div, idAsiento);
                             }
@@ -285,7 +263,7 @@
                             if (fila === 'S' && (num === 21 || num === 20 || num === 19 || num === 5)) {
                                 div.classList.add('vacio');
                             } else {
-                                div.classList.add('bloqueado-lateral');
+                                div.classList.add('nodisponible');
                             }
                         }
                     }
@@ -342,7 +320,6 @@
             document.getElementById('ticket-asientos').textContent = asientos;
             document.getElementById('ticket-snacks').textContent = snacksActual;
 
-            // Link seguro para el QR
             const urlSeguraStaff = window.location.origin + window.location.pathname + "?validar=" + pedidoActual;
             const urlQR = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(urlSeguraStaff)}`;
             document.getElementById('qr-image').src = urlQR;
