@@ -46,8 +46,8 @@
         .val-data p { margin: 8px 0; }
         .val-data span { color: #4CAF50; font-weight: bold; font-size: 18px;}
         
-        /* ESTILOS NUEVOS PARA INPUT DE PIN (Móvil Numérico) */
-        .pin-input { font-size: 20px; text-align: center; letter-spacing: 5px; font-weight: bold; background: #fff; color: #000; padding: 10px; margin-top: 10px;}
+        /* ESTILOS DEL NUEVO PIN FLASH */
+        .pin-input { font-size: 24px; text-align: center; letter-spacing: 15px; font-weight: bold; background: #fff; color: #000; padding: 15px; margin-top: 10px; border-radius: 5px; border: 3px solid #ff9800; outline: none; }
 
         @media (max-width: 600px) {
             .grid-asientos { gap: 2px; grid-template-columns: repeat(5, 1fr) 6px repeat(13, 1fr) 6px repeat(5, 1fr); }
@@ -66,7 +66,7 @@
         <p id="mensaje"></p>
     </div>
 
-    <!-- PANTALLA DE VALIDACIÓN STAFF RENOVADA (Más Rápida) -->
+    <!-- PANTALLA DE VALIDACIÓN STAFF (SISTEMA FLASH) -->
     <div class="validacion-box" id="pantalla-validacion">
         <h2>🛡️ Validación Staff</h2>
         <p id="msj-validacion">Consultando base de datos segura...</p>
@@ -79,13 +79,16 @@
             
             <hr style="border-color: #444; margin: 15px 0;">
             
-            <!-- Aquí sale el mensaje en texto puro (ya no parece botón) -->
             <div id="estado-ticket" style="font-size: 16px; font-weight: bold; text-align: center; margin-bottom: 10px;"></div>
             
-            <!-- Zona de acción: Input Numérico Directo + Botón -->
-            <div id="zona-accion" style="display:none;">
-                <input type="number" id="pin-staff" class="pin-input" pattern="[0-9]*" inputmode="numeric" placeholder="PIN">
-                <button id="btn-quemar" style="background-color: #ff9800; margin-top: 5px; font-size: 16px;" onclick="quemarEntrada()">🔥 VALIDAR E INGRESAR</button>
+            <!-- Zona de Acción (Botón + Teclado Numérico) -->
+            <div id="zona-accion" style="display:none; text-align:center;">
+                <button id="btn-iniciar-quema" style="background-color: #ff9800; font-size: 16px;" onclick="mostrarTecladoPin()">🔥 VALIDAR E INGRESAR</button>
+                
+                <!-- Input Tel para forzar teclado numérico gigante en móviles -->
+                <input type="tel" id="pin-staff" class="pin-input" maxlength="4" placeholder="PIN" style="display:none; width: 100%; box-sizing: border-box;" oninput="verificarPinFlash()">
+                
+                <p id="msj-procesando" style="display:none; color: #ff9800; font-weight: bold; font-size: 18px; margin-top: 15px;">⏳ Procesando...</p>
             </div>
         </div>
         <button onclick="window.location.href = window.location.pathname" style="margin-top: 20px; background: #555;">Cerrar y Volver al Inicio</button>
@@ -181,7 +184,7 @@
                     let asientosAsignados = String(clienteEncontrado[5] || "").trim();
                     document.getElementById('val-asientos').textContent = asientosAsignados === "" ? "NO HA ELEGIDO" : asientosAsignados;
 
-                    // VERIFICACIÓN A COLUMNA G (Índice 6)
+                    // LECTURA DE COLUMNA G
                     let estadoCanje = String(clienteEncontrado[6] || "").trim().toUpperCase();
                     
                     if (estadoCanje === "CANJEADO") {
@@ -192,6 +195,10 @@
                         cajaEstado.style.color = "#4CAF50";
                         cajaEstado.innerHTML = "🟢 TICKET VÁLIDO - LISTO PARA INGRESAR";
                         zonaAccion.style.display = "block";
+                        document.getElementById('btn-iniciar-quema').style.display = "block";
+                        document.getElementById('pin-staff').style.display = "none";
+                        document.getElementById('pin-staff').value = "";
+                        document.getElementById('msj-procesando').style.display = "none";
                     }
 
                 } else {
@@ -202,24 +209,34 @@
             } catch (error) { msjVal.textContent = "Error al conectar con la base de datos."; }
         }
 
-        async function quemarEntrada() {
-            // 🛑 PIN DE SEGURIDAD PARA EL STAFF
-            const PIN_SECRETO = "2026"; 
-            const claveIngresada = document.getElementById('pin-staff').value;
-            
-            if (claveIngresada !== PIN_SECRETO) {
-                alert("❌ PIN Incorrecto. Intenta de nuevo.");
-                return;
-            }
+        /* ----- SISTEMA DE PIN FLASH ----- */
+        function mostrarTecladoPin() {
+            document.getElementById('btn-iniciar-quema').style.display = 'none';
+            const inputPin = document.getElementById('pin-staff');
+            inputPin.style.display = 'block';
+            inputPin.focus(); // Llama al teclado del celular al instante
+        }
 
-            const btn = document.getElementById('btn-quemar');
+        async function verificarPinFlash() {
+            const inputPin = document.getElementById('pin-staff');
+            const PIN_SECRETO = "1639"; // TU CLAVE
+
+            if (inputPin.value === PIN_SECRETO) {
+                // Pin correcto: Bloquea input, muestra procesando y lanza la orden
+                inputPin.disabled = true;
+                inputPin.style.display = 'none';
+                document.getElementById('msj-procesando').style.display = 'block';
+                await quemarEntradaSeguro();
+            } else if (inputPin.value.length >= 4) {
+                // Pin incorrecto: Borra y avisa
+                alert("❌ PIN Incorrecto");
+                inputPin.value = "";
+            }
+        }
+
+        async function quemarEntradaSeguro() {
             const cajaEstado = document.getElementById('estado-ticket');
             const zonaAccion = document.getElementById('zona-accion');
-            
-            if(!confirm("¿Confirmas el ingreso de este pedido?")) return;
-
-            btn.disabled = true;
-            btn.textContent = "Procesando...";
             
             try {
                 const urlQuemar = `${GOOGLE_SCRIPT_URL}?action=canjear&pedido=${pedidoAValidarGlobal}`;
@@ -228,13 +245,18 @@
                 cajaEstado.style.color = "#e50914";
                 cajaEstado.innerHTML = "⛔ ENTRADA CANJEADA CON ÉXITO";
                 zonaAccion.style.display = "none";
-                alert("¡Entrada marcada como USADA!");
+                alert("¡Entrada marcada como USADA en la base de datos!");
             } catch(e) {
                 alert("Hubo un error de conexión. Intenta de nuevo.");
-                btn.disabled = false;
-                btn.textContent = "🔥 VALIDAR E INGRESAR";
+                // Restaura los botones si hay error de internet
+                document.getElementById('btn-iniciar-quema').style.display = 'block';
+                document.getElementById('msj-procesando').style.display = 'none';
+                const inputPin = document.getElementById('pin-staff');
+                inputPin.disabled = false;
+                inputPin.value = "";
             }
         }
+        /* -------------------------------- */
 
         async function verificarDatos() {
             const pedido = document.getElementById('pedido').value.trim();
