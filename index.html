@@ -46,10 +46,8 @@
         .val-data p { margin: 8px 0; }
         .val-data span { color: #4CAF50; font-weight: bold; font-size: 18px;}
         
-        /* ESTILOS NUEVOS PARA EL BOTON Y ESTADO */
-        .estado-box { margin-top: 15px; padding: 12px; border-radius: 5px; font-weight: bold; text-align: center; font-size: 14px; }
-        .estado-valido { background: #4CAF50; color: white; }
-        .estado-quemado { background: #e50914; color: white; }
+        /* ESTILOS NUEVOS PARA INPUT DE PIN (Móvil Numérico) */
+        .pin-input { font-size: 20px; text-align: center; letter-spacing: 5px; font-weight: bold; background: #fff; color: #000; padding: 10px; margin-top: 10px;}
 
         @media (max-width: 600px) {
             .grid-asientos { gap: 2px; grid-template-columns: repeat(5, 1fr) 6px repeat(13, 1fr) 6px repeat(5, 1fr); }
@@ -68,7 +66,7 @@
         <p id="mensaje"></p>
     </div>
 
-    <!-- PANTALLA DE VALIDACIÓN CON LOS ELEMENTOS CORREGIDOS -->
+    <!-- PANTALLA DE VALIDACIÓN STAFF RENOVADA (Más Rápida) -->
     <div class="validacion-box" id="pantalla-validacion">
         <h2>🛡️ Validación Staff</h2>
         <p id="msj-validacion">Consultando base de datos segura...</p>
@@ -80,10 +78,17 @@
             <p>Snacks: <b id="val-snacks" style="color: #ff9800;"></b></p>
             
             <hr style="border-color: #444; margin: 15px 0;">
-            <div id="estado-ticket" class="estado-box"></div>
-            <button id="btn-quemar" style="display:none; background-color: #ff9800; margin-top: 15px; font-size: 16px;" onclick="quemarEntrada()">🔥 MARCAR COMO INGRESADO</button>
+            
+            <!-- Aquí sale el mensaje en texto puro (ya no parece botón) -->
+            <div id="estado-ticket" style="font-size: 16px; font-weight: bold; text-align: center; margin-bottom: 10px;"></div>
+            
+            <!-- Zona de acción: Input Numérico Directo + Botón -->
+            <div id="zona-accion" style="display:none;">
+                <input type="number" id="pin-staff" class="pin-input" pattern="[0-9]*" inputmode="numeric" placeholder="PIN">
+                <button id="btn-quemar" style="background-color: #ff9800; margin-top: 5px; font-size: 16px;" onclick="quemarEntrada()">🔥 VALIDAR E INGRESAR</button>
+            </div>
         </div>
-        <button onclick="window.location.href = window.location.pathname" style="margin-top: 20px; background: #555;">Escanear Otro</button>
+        <button onclick="window.location.href = window.location.pathname" style="margin-top: 20px; background: #555;">Cerrar y Volver al Inicio</button>
     </div>
 
     <div id="sala-cine">
@@ -149,8 +154,8 @@
         async function ejecutarValidacionStaff(pedidoId) {
             const msjVal = document.getElementById('msj-validacion');
             const cajaDatos = document.getElementById('datos-validacion');
-            const btnQuemar = document.getElementById('btn-quemar');
             const cajaEstado = document.getElementById('estado-ticket');
+            const zonaAccion = document.getElementById('zona-accion');
             
             try {
                 const respuesta = await fetch(GOOGLE_SCRIPT_URL);
@@ -176,17 +181,17 @@
                     let asientosAsignados = String(clienteEncontrado[5] || "").trim();
                     document.getElementById('val-asientos').textContent = asientosAsignados === "" ? "NO HA ELEGIDO" : asientosAsignados;
 
-                    // 🚨 VERIFICACIÓN A COLUMNA G (Índice 6)
+                    // VERIFICACIÓN A COLUMNA G (Índice 6)
                     let estadoCanje = String(clienteEncontrado[6] || "").trim().toUpperCase();
                     
                     if (estadoCanje === "CANJEADO") {
-                        cajaEstado.className = "estado-box estado-quemado";
+                        cajaEstado.style.color = "#e50914";
                         cajaEstado.innerHTML = "⛔ ALERTA: ESTA ENTRADA YA FUE USADA";
-                        btnQuemar.style.display = "none";
+                        zonaAccion.style.display = "none";
                     } else {
-                        cajaEstado.className = "estado-box estado-valido";
+                        cajaEstado.style.color = "#4CAF50";
                         cajaEstado.innerHTML = "🟢 TICKET VÁLIDO - LISTO PARA INGRESAR";
-                        btnQuemar.style.display = "block";
+                        zonaAccion.style.display = "block";
                     }
 
                 } else {
@@ -200,17 +205,18 @@
         async function quemarEntrada() {
             // 🛑 PIN DE SEGURIDAD PARA EL STAFF
             const PIN_SECRETO = "2026"; 
-            const claveIngresada = prompt("🔒 ACCESO RESTRINGIDO\nIngresa el PIN de Staff para validar esta entrada:");
+            const claveIngresada = document.getElementById('pin-staff').value;
             
             if (claveIngresada !== PIN_SECRETO) {
-                alert("❌ PIN Incorrecto. Solo el staff puede marcar entradas.");
+                alert("❌ PIN Incorrecto. Intenta de nuevo.");
                 return;
             }
 
             const btn = document.getElementById('btn-quemar');
             const cajaEstado = document.getElementById('estado-ticket');
+            const zonaAccion = document.getElementById('zona-accion');
             
-            if(!confirm("¿Seguro que deseas MARCAR ESTA ENTRADA COMO USADA? Ya no podrá volver a ingresar.")) return;
+            if(!confirm("¿Confirmas el ingreso de este pedido?")) return;
 
             btn.disabled = true;
             btn.textContent = "Procesando...";
@@ -219,14 +225,14 @@
                 const urlQuemar = `${GOOGLE_SCRIPT_URL}?action=canjear&pedido=${pedidoAValidarGlobal}`;
                 await fetch(urlQuemar);
                 
-                cajaEstado.className = "estado-box estado-quemado";
+                cajaEstado.style.color = "#e50914";
                 cajaEstado.innerHTML = "⛔ ENTRADA CANJEADA CON ÉXITO";
-                btn.style.display = "none";
-                alert("¡Entrada marcada como USADA en la base de datos!");
+                zonaAccion.style.display = "none";
+                alert("¡Entrada marcada como USADA!");
             } catch(e) {
                 alert("Hubo un error de conexión. Intenta de nuevo.");
                 btn.disabled = false;
-                btn.textContent = "🔥 MARCAR COMO INGRESADO";
+                btn.textContent = "🔥 VALIDAR E INGRESAR";
             }
         }
 
@@ -290,7 +296,7 @@
             contenedor.innerHTML = ""; 
             const filas = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S'];
             
-            const asientosX = ['Q3','Q4','Q21','Q20','D20','D19','D18','D17','D16','D15','D14','D13','D12','D11','D10','D9','D8','D7','D6','D5','D4','S17','S16','S15','S14', 'R20','R19','R14','R13','R12','R11','R10','R5','R4','R17','R16','R15','R9','R8','R7'];
+            const asientosX = ['Q3','Q4','Q21','Q20','D20','D19','D18','D17','D16','D15','D14','D13','D12','D11','D10','D9','D8','D7','D6','D5','D4','S17','S16','S15','S14', 'R20','R19','R14','R13','R12','R11','R10','R5','R4','R17','R16','R15','R9','R8','R7', 'P3', 'P21'];
 
             filas.forEach(fila => {
                 for (let num = 23; num >= 1; num--) {
