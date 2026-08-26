@@ -46,7 +46,6 @@
         .val-data p { margin: 8px 0; }
         .val-data span { color: #4CAF50; font-weight: bold; font-size: 18px;}
         
-        /* ESTILOS DEL NUEVO PIN FLASH */
         .pin-input { font-size: 24px; text-align: center; letter-spacing: 15px; font-weight: bold; background: #fff; color: #000; padding: 15px; margin-top: 10px; border-radius: 5px; border: 3px solid #ff9800; outline: none; }
 
         @media (max-width: 600px) {
@@ -66,7 +65,7 @@
         <p id="mensaje"></p>
     </div>
 
-    <!-- PANTALLA DE VALIDACIÓN STAFF (SISTEMA FLASH) -->
+    <!-- PANTALLA STAFF -->
     <div class="validacion-box" id="pantalla-validacion">
         <h2>🛡️ Validación Staff</h2>
         <p id="msj-validacion">Consultando base de datos segura...</p>
@@ -81,13 +80,9 @@
             
             <div id="estado-ticket" style="font-size: 16px; font-weight: bold; text-align: center; margin-bottom: 10px;"></div>
             
-            <!-- Zona de Acción (Botón + Teclado Numérico) -->
             <div id="zona-accion" style="display:none; text-align:center;">
                 <button id="btn-iniciar-quema" style="background-color: #ff9800; font-size: 16px;" onclick="mostrarTecladoPin()">🔥 VALIDAR E INGRESAR</button>
-                
-                <!-- Input Tel para forzar teclado numérico gigante en móviles -->
                 <input type="tel" id="pin-staff" class="pin-input" maxlength="4" placeholder="PIN" style="display:none; width: 100%; box-sizing: border-box;" oninput="verificarPinFlash()">
-                
                 <p id="msj-procesando" style="display:none; color: #ff9800; font-weight: bold; font-size: 18px; margin-top: 15px;">⏳ Procesando...</p>
             </div>
         </div>
@@ -165,6 +160,7 @@
                 const datos = await respuesta.json();
                 let clienteEncontrado = null;
                 for (let i = 1; i < datos.length; i++) {
+                    // Volvimos al índice 0 (Columna A)
                     if (String(datos[i][0]).trim().toLowerCase() === String(pedidoId).trim().toLowerCase()) {
                         clienteEncontrado = datos[i];
                         break;
@@ -184,7 +180,7 @@
                     let asientosAsignados = String(clienteEncontrado[5] || "").trim();
                     document.getElementById('val-asientos').textContent = asientosAsignados === "" ? "NO HA ELEGIDO" : asientosAsignados;
 
-                    // LECTURA DE COLUMNA G
+                    // Columna G (Índice 6)
                     let estadoCanje = String(clienteEncontrado[6] || "").trim().toUpperCase();
                     
                     if (estadoCanje === "CANJEADO") {
@@ -209,26 +205,23 @@
             } catch (error) { msjVal.textContent = "Error al conectar con la base de datos."; }
         }
 
-        /* ----- SISTEMA DE PIN FLASH ----- */
         function mostrarTecladoPin() {
             document.getElementById('btn-iniciar-quema').style.display = 'none';
             const inputPin = document.getElementById('pin-staff');
             inputPin.style.display = 'block';
-            inputPin.focus(); // Llama al teclado del celular al instante
+            inputPin.focus(); 
         }
 
         async function verificarPinFlash() {
             const inputPin = document.getElementById('pin-staff');
-            const PIN_SECRETO = "1639"; // TU CLAVE
+            const PIN_SECRETO = "1639"; 
 
             if (inputPin.value === PIN_SECRETO) {
-                // Pin correcto: Bloquea input, muestra procesando y lanza la orden
                 inputPin.disabled = true;
                 inputPin.style.display = 'none';
                 document.getElementById('msj-procesando').style.display = 'block';
                 await quemarEntradaSeguro();
             } else if (inputPin.value.length >= 4) {
-                // Pin incorrecto: Borra y avisa
                 alert("❌ PIN Incorrecto");
                 inputPin.value = "";
             }
@@ -240,15 +233,19 @@
             
             try {
                 const urlQuemar = `${GOOGLE_SCRIPT_URL}?action=canjear&pedido=${pedidoAValidarGlobal}`;
-                await fetch(urlQuemar);
-                
-                cajaEstado.style.color = "#e50914";
-                cajaEstado.innerHTML = "⛔ ENTRADA CANJEADA CON ÉXITO";
-                zonaAccion.style.display = "none";
-                alert("¡Entrada marcada como USADA en la base de datos!");
+                const respuesta = await fetch(urlQuemar);
+                const texto = await respuesta.text();
+
+                if (texto === "OK") {
+                    cajaEstado.style.color = "#e50914";
+                    cajaEstado.innerHTML = "⛔ ENTRADA CANJEADA CON ÉXITO";
+                    zonaAccion.style.display = "none";
+                    alert("¡Entrada marcada como USADA en el Excel!");
+                } else {
+                    throw new Error("No se pudo actualizar");
+                }
             } catch(e) {
-                alert("Hubo un error de conexión. Intenta de nuevo.");
-                // Restaura los botones si hay error de internet
+                alert("Hubo un error al guardar en Google Sheets. Intenta de nuevo.");
                 document.getElementById('btn-iniciar-quema').style.display = 'block';
                 document.getElementById('msj-procesando').style.display = 'none';
                 const inputPin = document.getElementById('pin-staff');
@@ -256,7 +253,6 @@
                 inputPin.value = "";
             }
         }
-        /* -------------------------------- */
 
         async function verificarDatos() {
             const pedido = document.getElementById('pedido').value.trim();
@@ -277,9 +273,9 @@
                 todosLosAsientosOcupados = [];
 
                 for (let i = 1; i < datos.length; i++) {
-                    let pedidoFila = String(datos[i][0]).trim().toLowerCase();
-                    let dniFila = String(datos[i][1]).trim().toLowerCase();
-                    let asientosFila = String(datos[i][5] || "").trim();
+                    let pedidoFila = String(datos[i][0]).trim().toLowerCase(); 
+                    let dniFila = String(datos[i][1]).trim().toLowerCase();    
+                    let asientosFila = String(datos[i][5] || "").trim();       
                     if (asientosFila !== "") {
                         let asientosArray = asientosFila.split(",").map(a => a.trim());
                         todosLosAsientosOcupados = todosLosAsientosOcupados.concat(asientosArray);
@@ -392,8 +388,14 @@
             
             try {
                 const urlGuardar = `${GOOGLE_SCRIPT_URL}?action=guardar&pedido=${pedidoActual}&asientos=${encodeURIComponent(asientosString)}`;
-                await fetch(urlGuardar);
-                mostrarTicket(asientosString);
+                const respuesta = await fetch(urlGuardar);
+                const texto = await respuesta.text();
+
+                if (texto === "OK") {
+                    mostrarTicket(asientosString);
+                } else {
+                    throw new Error("No guardó correctamente");
+                }
             } catch (error) {
                 msjConfirmacion.textContent = "Hubo un error al guardar. Intenta de nuevo.";
                 msjConfirmacion.style.color = "red";
