@@ -140,6 +140,9 @@
         async function ejecutarValidacionStaff(pedidoId) {
             const msjVal = document.getElementById('msj-validacion');
             const cajaDatos = document.getElementById('datos-validacion');
+            const btnQuemar = document.getElementById('btn-quemar');
+            const cajaEstado = document.getElementById('estado-ticket');
+            
             try {
                 const respuesta = await fetch(GOOGLE_SCRIPT_URL);
                 const datos = await respuesta.json();
@@ -150,23 +153,72 @@
                         break;
                     }
                 }
+                
                 if (clienteEncontrado) {
                     msjVal.textContent = "✅ TICKET ORIGINAL ENCONTRADO";
                     msjVal.style.color = "#4CAF50";
                     cajaDatos.style.display = "block";
                     document.getElementById('pantalla-validacion').classList.add('val-success');
+                    
                     document.getElementById('val-pedido').textContent = clienteEncontrado[0];
                     document.getElementById('val-dni').textContent = clienteEncontrado[1];
                     document.getElementById('val-entradas').textContent = clienteEncontrado[2];
                     document.getElementById('val-snacks').textContent = clienteEncontrado[3] || "Ninguno";
                     let asientosAsignados = String(clienteEncontrado[5] || "").trim();
                     document.getElementById('val-asientos').textContent = asientosAsignados === "" ? "NO HA ELEGIDO" : asientosAsignados;
+
+                    // 🚨 VERIFICACIÓN DE FRAUDE ACTUALIZADA A COLUMNA G (Índice 6)
+                    let estadoCanje = String(clienteEncontrado[6] || "").trim().toUpperCase();
+                    
+                    if (estadoCanje === "CANJEADO") {
+                        cajaEstado.className = "estado-box estado-quemado";
+                        cajaEstado.innerHTML = "⛔ ALERTA: ESTA ENTRADA YA FUE USADA";
+                        btnQuemar.style.display = "none";
+                    } else {
+                        cajaEstado.className = "estado-box estado-valido";
+                        cajaEstado.innerHTML = "🟢 TICKET VÁLIDO - LISTO PARA INGRESAR";
+                        btnQuemar.style.display = "block";
+                    }
+
                 } else {
                     msjVal.textContent = "❌ ALERTA: PEDIDO FALSO O NO EXISTE";
                     msjVal.style.color = "#e50914";
                     document.getElementById('pantalla-validacion').classList.add('val-error');
                 }
             } catch (error) { msjVal.textContent = "Error al conectar con la base de datos."; }
+        }
+
+        async function quemarEntrada() {
+            // 🛑 PIN DE SEGURIDAD PARA EL STAFF
+            const PIN_SECRETO = "1639"; // <-- Cambia esto si quieres otra clave
+            const claveIngresada = prompt("🔒 ACCESO RESTRINGIDO\nIngresa el PIN de Staff para validar esta entrada:");
+            
+            if (claveIngresada !== PIN_SECRETO) {
+                alert("❌ PIN Incorrecto. Solo el staff puede marcar entradas.");
+                return; // Corta la función aquí, no hace nada más.
+            }
+
+            const btn = document.getElementById('btn-quemar');
+            const cajaEstado = document.getElementById('estado-ticket');
+            
+            if(!confirm("¿Seguro que deseas MARCAR ESTA ENTRADA COMO USADA? Ya no podrá volver a ingresar.")) return;
+
+            btn.disabled = true;
+            btn.textContent = "Procesando...";
+            
+            try {
+                const urlQuemar = `${GOOGLE_SCRIPT_URL}?action=canjear&pedido=${pedidoAValidarGlobal}`;
+                await fetch(urlQuemar);
+                
+                cajaEstado.className = "estado-box estado-quemado";
+                cajaEstado.innerHTML = "⛔ ENTRADA CANJEADA CON ÉXITO";
+                btn.style.display = "none";
+                alert("¡Entrada marcada como USADA en la base de datos!");
+            } catch(e) {
+                alert("Hubo un error de conexión. Intenta de nuevo.");
+                btn.disabled = false;
+                btn.textContent = "🔥 MARCAR COMO INGRESADO";
+            }
         }
 
         async function verificarDatos() {
