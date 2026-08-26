@@ -20,9 +20,7 @@
         .pasillo { background: transparent; pointer-events: none; }
         
         .asiento.seleccionado { background: #e50914; color: white; border: 1px solid #fff; }
-        /* OCUPADOS REALES (Excel) = GRIS */
         .asiento.ocupado { background: #555; color: #222; cursor: not-allowed; }
-        /* NO DISPONIBLES / BLOQUEADOS = NEGRO (Sin X) */
         .asiento.nodisponible { background: #151515; color: #333; cursor: not-allowed; border: 1px solid #222; } 
         .asiento.bloqueado-lateral { background: #151515; color: #333; cursor: not-allowed; border: 1px solid #222; }
         .asiento.vacio { visibility: hidden; } 
@@ -47,6 +45,11 @@
         .val-data { background: #222; padding: 15px; border-radius: 5px; text-align: left; margin-top: 15px; color: white; }
         .val-data p { margin: 8px 0; }
         .val-data span { color: #4CAF50; font-weight: bold; font-size: 18px;}
+        
+        /* ESTILOS NUEVOS PARA EL BOTON Y ESTADO */
+        .estado-box { margin-top: 15px; padding: 12px; border-radius: 5px; font-weight: bold; text-align: center; font-size: 14px; }
+        .estado-valido { background: #4CAF50; color: white; }
+        .estado-quemado { background: #e50914; color: white; }
 
         @media (max-width: 600px) {
             .grid-asientos { gap: 2px; grid-template-columns: repeat(5, 1fr) 6px repeat(13, 1fr) 6px repeat(5, 1fr); }
@@ -65,6 +68,7 @@
         <p id="mensaje"></p>
     </div>
 
+    <!-- PANTALLA DE VALIDACIÓN CON LOS ELEMENTOS CORREGIDOS -->
     <div class="validacion-box" id="pantalla-validacion">
         <h2>🛡️ Validación Staff</h2>
         <p id="msj-validacion">Consultando base de datos segura...</p>
@@ -74,8 +78,12 @@
             <p>Entradas: <b id="val-entradas"></b></p>
             <p>Asientos: <span id="val-asientos"></span></p>
             <p>Snacks: <b id="val-snacks" style="color: #ff9800;"></b></p>
+            
+            <hr style="border-color: #444; margin: 15px 0;">
+            <div id="estado-ticket" class="estado-box"></div>
+            <button id="btn-quemar" style="display:none; background-color: #ff9800; margin-top: 15px; font-size: 16px;" onclick="quemarEntrada()">🔥 MARCAR COMO INGRESADO</button>
         </div>
-        <button onclick="window.location.href = window.location.pathname" style="margin-top: 20px; background: #555;">Ir al Inicio</button>
+        <button onclick="window.location.href = window.location.pathname" style="margin-top: 20px; background: #555;">Escanear Otro</button>
     </div>
 
     <div id="sala-cine">
@@ -84,7 +92,6 @@
         <div class="pantalla">PANTALLA</div>
         <div class="grid-asientos" id="contenedor-asientos"></div>
         
-        <!-- LEYENDA CON LOS 4 COLORES CLAROS -->
         <div class="leyenda">
             <span style="display:flex; align-items:center; gap:6px;"><div style="width:14px; height:14px; background:#fff; border-radius:3px;"></div> Disponible</span>
             <span style="display:flex; align-items:center; gap:6px;"><div style="width:14px; height:14px; background:#e50914; border-radius:3px;"></div> Elegido</span>
@@ -126,6 +133,7 @@
         let snacksActual = "";
         let dniActual = "";
         let todosLosAsientosOcupados = [];
+        let pedidoAValidarGlobal = ""; 
 
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -133,6 +141,7 @@
             if (pedidoAValidar) {
                 document.getElementById('login-section').style.display = 'none';
                 document.getElementById('pantalla-validacion').style.display = 'block';
+                pedidoAValidarGlobal = pedidoAValidar;
                 ejecutarValidacionStaff(pedidoAValidar);
             }
         };
@@ -167,7 +176,7 @@
                     let asientosAsignados = String(clienteEncontrado[5] || "").trim();
                     document.getElementById('val-asientos').textContent = asientosAsignados === "" ? "NO HA ELEGIDO" : asientosAsignados;
 
-                    // 🚨 VERIFICACIÓN DE FRAUDE ACTUALIZADA A COLUMNA G (Índice 6)
+                    // 🚨 VERIFICACIÓN A COLUMNA G (Índice 6)
                     let estadoCanje = String(clienteEncontrado[6] || "").trim().toUpperCase();
                     
                     if (estadoCanje === "CANJEADO") {
@@ -190,12 +199,12 @@
 
         async function quemarEntrada() {
             // 🛑 PIN DE SEGURIDAD PARA EL STAFF
-            const PIN_SECRETO = "1639"; // <-- Cambia esto si quieres otra clave
+            const PIN_SECRETO = "2026"; 
             const claveIngresada = prompt("🔒 ACCESO RESTRINGIDO\nIngresa el PIN de Staff para validar esta entrada:");
             
             if (claveIngresada !== PIN_SECRETO) {
                 alert("❌ PIN Incorrecto. Solo el staff puede marcar entradas.");
-                return; // Corta la función aquí, no hace nada más.
+                return;
             }
 
             const btn = document.getElementById('btn-quemar');
@@ -281,7 +290,6 @@
             contenedor.innerHTML = ""; 
             const filas = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S'];
             
-            // 👇 AQUÍ ES DONDE AGREGAS TUS 4 ASIENTOS LUEGO. Solo escríbelos como 'A1', 'B2', etc. separados por comas.
             const asientosX = ['Q3','Q4','Q21','Q20','D20','D19','D18','D17','D16','D15','D14','D13','D12','D11','D10','D9','D8','D7','D6','D5','D4','S17','S16','S15','S14', 'R20','R19','R14','R13','R12','R11','R10','R5','R4','R17','R16','R15','R9','R8','R7'];
 
             filas.forEach(fila => {
