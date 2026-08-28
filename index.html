@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Canje de Entradas - Achorao</title>
+    <!-- Agregamos tu Favicon oficial -->
     <link rel="icon" type="image/png" href="https://cdn.shopify.com/s/files/1/0044/0234/8104/files/favicon-achorao.png?v=1667589589">
     <style>
         body { font-family: Arial, sans-serif; background-color: #1a1a1a; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; flex-direction: column; padding: 15px; box-sizing: border-box; }
@@ -48,6 +49,10 @@
         .val-data span { color: #4CAF50; font-weight: bold; font-size: 18px;}
         
         .pin-input { font-size: 24px; text-align: center; letter-spacing: 15px; font-weight: bold; background: #fff; color: #000; padding: 15px; margin-top: 10px; border-radius: 5px; border: 3px solid #ff9800; outline: none; }
+        
+        /* Estilo para el temporizador */
+        #temporizador { background: #ff9800; color: #000; padding: 8px 15px; border-radius: 20px; display: inline-block; font-weight: bold; font-size: 14px; margin-bottom: 15px; animation: latido 1.5s infinite; }
+        @keyframes latido { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
         @media (max-width: 600px) {
             .grid-asientos { gap: 2px; grid-template-columns: repeat(5, 1fr) 6px repeat(13, 1fr) 6px repeat(5, 1fr); }
@@ -72,7 +77,7 @@
         <p id="msj-validacion">Consultando base de datos segura...</p>
         <div id="datos-validacion" class="val-data" style="display:none;">
             <p>Pedido: <b id="val-pedido"></b></p>
-            <p>DNI: <b id="val-dni"></b></p>
+            <p>Doc: <b id="val-dni"></b></p>
             <p>Entradas: <b id="val-entradas"></b></p>
             <p>Asientos: <span id="val-asientos"></span></p>
             <p>Snacks: <b id="val-snacks" style="color: #ff9800;"></b></p>
@@ -91,6 +96,7 @@
     </div>
 
     <div id="sala-cine">
+        <div id="temporizador" style="display:none;">⏳ Tienes <span id="tiempo-timer">05:00</span> para elegir</div>
         <h2>Selecciona tus Asientos</h2>
         <p id="info-cliente"></p>
         <div class="pantalla">PANTALLA</div>
@@ -138,6 +144,7 @@
         let dniActual = "";
         let todosLosAsientosOcupados = [];
         let pedidoAValidarGlobal = ""; 
+        let timerInterval;
 
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -150,6 +157,26 @@
             }
         };
 
+        // --- FUNCIONES DEL TEMPORIZADOR ---
+        function iniciarTemporizador() {
+            let tiempo = 300; // 5 minutos = 300 segundos
+            const display = document.getElementById('tiempo-timer');
+            document.getElementById('temporizador').style.display = 'inline-block';
+
+            timerInterval = setInterval(() => {
+                let minutos = Math.floor(tiempo / 60);
+                let segundos = tiempo % 60;
+                segundos = segundos < 10 ? '0' + segundos : segundos;
+                display.textContent = `0${minutos}:${segundos}`;
+
+                if (--tiempo < 0) {
+                    clearInterval(timerInterval);
+                    alert("⏳ ¡Tu tiempo para elegir asiento ha expirado! Por favor, vuelve a ingresar.");
+                    window.location.reload(); // Recarga la página
+                }
+            }, 1000);
+        }
+
         async function ejecutarValidacionStaff(pedidoId) {
             const msjVal = document.getElementById('msj-validacion');
             const cajaDatos = document.getElementById('datos-validacion');
@@ -161,7 +188,6 @@
                 const datos = await respuesta.json();
                 let clienteEncontrado = null;
                 for (let i = 1; i < datos.length; i++) {
-                    // Volvimos al índice 0 (Columna A)
                     if (String(datos[i][0]).trim().toLowerCase() === String(pedidoId).trim().toLowerCase()) {
                         clienteEncontrado = datos[i];
                         break;
@@ -181,7 +207,6 @@
                     let asientosAsignados = String(clienteEncontrado[5] || "").trim();
                     document.getElementById('val-asientos').textContent = asientosAsignados === "" ? "NO HA ELEGIDO" : asientosAsignados;
 
-                    // Columna G (Índice 6)
                     let estadoCanje = String(clienteEncontrado[6] || "").trim().toUpperCase();
                     
                     if (estadoCanje === "CANJEADO") {
@@ -197,7 +222,6 @@
                         document.getElementById('pin-staff').value = "";
                         document.getElementById('msj-procesando').style.display = "none";
                     }
-
                 } else {
                     msjVal.textContent = "❌ ALERTA: PEDIDO FALSO O NO EXISTE";
                     msjVal.style.color = "#e50914";
@@ -237,7 +261,7 @@
                 const respuesta = await fetch(urlQuemar);
                 const texto = await respuesta.text();
 
-                if (texto === "OK") {
+                if (texto === "OK" || texto.includes("OK")) {
                     cajaEstado.style.color = "#e50914";
                     cajaEstado.innerHTML = "⛔ ENTRADA CANJEADA CON ÉXITO";
                     zonaAccion.style.display = "none";
@@ -299,6 +323,7 @@
                         document.getElementById('sala-cine').style.display = 'block';
                         document.getElementById('info-cliente').innerHTML = `Tienes <b>${entradasPermitidas} entradas</b> por ubicar.`;
                         generarAsientos();
+                        iniciarTemporizador(); // Iniciamos la cuenta regresiva
                     } else { mostrarTicket("Solo Combos / Snacks"); }
                 } else {
                     mensajeEl.textContent = "Datos incorrectos o no encontrados."; 
@@ -380,19 +405,53 @@
             document.getElementById('btn-confirmar').style.display = (asientosSeleccionados.length === entradasPermitidas) ? 'inline-block' : 'none';
         }
 
+        // --- FUNCION ANTICHOQUE ACTUALIZADA ---
         async function confirmarAsientos() {
             const btnConfirmar = document.getElementById('btn-confirmar');
             const msjConfirmacion = document.getElementById('mensaje-confirmacion');
             btnConfirmar.disabled = true;
-            msjConfirmacion.textContent = "Guardando tus asientos... ⏳";
-            const asientosString = asientosSeleccionados.join(", ");
+            
+            // 1. Verificación Flash (Evita que 2 personas guarden lo mismo)
+            msjConfirmacion.textContent = "Verificando disponibilidad... ⏳";
             
             try {
+                // Traemos los datos más recientes del Excel justo antes de guardar
+                const checkResp = await fetch(GOOGLE_SCRIPT_URL);
+                const datosFrescos = await checkResp.json();
+                let asientosOcupadosAhora = [];
+
+                for (let i = 1; i < datosFrescos.length; i++) {
+                    let asientosFila = String(datosFrescos[i][5] || "").trim();
+                    if (asientosFila !== "") {
+                        asientosOcupadosAhora = asientosOcupadosAhora.concat(asientosFila.split(",").map(a => a.trim()));
+                    }
+                }
+
+                // Revisamos si alguien más nos ganó los asientos
+                let conflicto = false;
+                for (let a of asientosSeleccionados) {
+                    if (asientosOcupadosAhora.includes(a)) { conflicto = true; }
+                }
+
+                if (conflicto) {
+                    alert("¡Uy! Alguien más acaba de ganar uno de los asientos que elegiste. Por favor, selecciona otros.");
+                    todosLosAsientosOcupados = asientosOcupadosAhora; // Actualizamos nuestro mapa local
+                    asientosSeleccionados = []; // Borramos su selección
+                    generarAsientos(); // Volvemos a pintar el mapa
+                    msjConfirmacion.textContent = "";
+                    btnConfirmar.style.display = "none";
+                    btnConfirmar.disabled = false;
+                    return; // Detenemos el guardado
+                }
+
+                // 2. Si están libres, ahora sí guardamos con seguridad
+                msjConfirmacion.textContent = "Guardando tus asientos... 🍿";
+                const asientosString = asientosSeleccionados.join(", ");
                 const urlGuardar = `${GOOGLE_SCRIPT_URL}?action=guardar&pedido=${pedidoActual}&asientos=${encodeURIComponent(asientosString)}`;
                 const respuesta = await fetch(urlGuardar);
                 const texto = await respuesta.text();
 
-                if (texto === "OK") {
+                if (texto === "OK" || texto.includes("OK")) {
                     mostrarTicket(asientosString);
                 } else {
                     throw new Error("No guardó correctamente");
@@ -405,6 +464,7 @@
         }
 
         function mostrarTicket(asientos) {
+            clearInterval(timerInterval); // Detenemos el temporizador si ya compró
             document.getElementById('sala-cine').style.display = 'none';
             document.getElementById('ticket-final').style.display = 'block';
             document.getElementById('ticket-pedido').textContent = pedidoActual;
