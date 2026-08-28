@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Canje de Entradas - Achorao</title>
-    <!-- Agregamos tu Favicon oficial -->
+    <!-- Favicon oficial -->
     <link rel="icon" type="image/png" href="https://cdn.shopify.com/s/files/1/0044/0234/8104/files/favicon-achorao.png?v=1667589589">
     <style>
         body { font-family: Arial, sans-serif; background-color: #1a1a1a; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; flex-direction: column; padding: 15px; box-sizing: border-box; }
@@ -96,7 +96,7 @@
     </div>
 
     <div id="sala-cine">
-        <div id="temporizador" style="display:none;">⏳ Tienes <span id="tiempo-timer">05:00</span> para elegir</div>
+        <div id="temporizador" style="display:none;">⏳ Tienes <span id="tiempo-timer">03:00</span> para elegir</div>
         <h2>Selecciona tus Asientos</h2>
         <p id="info-cliente"></p>
         <div class="pantalla">PANTALLA</div>
@@ -155,11 +155,19 @@
                 pedidoAValidarGlobal = pedidoAValidar;
                 ejecutarValidacionStaff(pedidoAValidar);
             }
+
+            // Habilitar la tecla "Enter" en los campos de login
+            document.getElementById('pedido').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') { document.getElementById('btn-ingresar').click(); }
+            });
+            document.getElementById('dni').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') { document.getElementById('btn-ingresar').click(); }
+            });
         };
 
-        // --- FUNCIONES DEL TEMPORIZADOR ---
+        // --- FUNCIONES DEL TEMPORIZADOR (AHORA 3 MINUTOS) ---
         function iniciarTemporizador() {
-            let tiempo = 300; // 5 minutos = 300 segundos
+            let tiempo = 180; // 3 minutos = 180 segundos
             const display = document.getElementById('tiempo-timer');
             document.getElementById('temporizador').style.display = 'inline-block';
 
@@ -172,7 +180,7 @@
                 if (--tiempo < 0) {
                     clearInterval(timerInterval);
                     alert("⏳ ¡Tu tiempo para elegir asiento ha expirado! Por favor, vuelve a ingresar.");
-                    window.location.reload(); // Recarga la página
+                    window.location.reload(); 
                 }
             }, 1000);
         }
@@ -405,17 +413,15 @@
             document.getElementById('btn-confirmar').style.display = (asientosSeleccionados.length === entradasPermitidas) ? 'inline-block' : 'none';
         }
 
-        // --- FUNCION ANTICHOQUE ACTUALIZADA ---
+        // --- FUNCION ANTICHOQUE ---
         async function confirmarAsientos() {
             const btnConfirmar = document.getElementById('btn-confirmar');
             const msjConfirmacion = document.getElementById('mensaje-confirmacion');
             btnConfirmar.disabled = true;
             
-            // 1. Verificación Flash (Evita que 2 personas guarden lo mismo)
             msjConfirmacion.textContent = "Verificando disponibilidad... ⏳";
             
             try {
-                // Traemos los datos más recientes del Excel justo antes de guardar
                 const checkResp = await fetch(GOOGLE_SCRIPT_URL);
                 const datosFrescos = await checkResp.json();
                 let asientosOcupadosAhora = [];
@@ -427,7 +433,6 @@
                     }
                 }
 
-                // Revisamos si alguien más nos ganó los asientos
                 let conflicto = false;
                 for (let a of asientosSeleccionados) {
                     if (asientosOcupadosAhora.includes(a)) { conflicto = true; }
@@ -435,16 +440,15 @@
 
                 if (conflicto) {
                     alert("¡Uy! Alguien más acaba de ganar uno de los asientos que elegiste. Por favor, selecciona otros.");
-                    todosLosAsientosOcupados = asientosOcupadosAhora; // Actualizamos nuestro mapa local
-                    asientosSeleccionados = []; // Borramos su selección
-                    generarAsientos(); // Volvemos a pintar el mapa
+                    todosLosAsientosOcupados = asientosOcupadosAhora; 
+                    asientosSeleccionados = []; 
+                    generarAsientos(); 
                     msjConfirmacion.textContent = "";
                     btnConfirmar.style.display = "none";
                     btnConfirmar.disabled = false;
-                    return; // Detenemos el guardado
+                    return; 
                 }
 
-                // 2. Si están libres, ahora sí guardamos con seguridad
                 msjConfirmacion.textContent = "Guardando tus asientos... 🍿";
                 const asientosString = asientosSeleccionados.join(", ");
                 const urlGuardar = `${GOOGLE_SCRIPT_URL}?action=guardar&pedido=${pedidoActual}&asientos=${encodeURIComponent(asientosString)}`;
@@ -464,7 +468,7 @@
         }
 
         function mostrarTicket(asientos) {
-            clearInterval(timerInterval); // Detenemos el temporizador si ya compró
+            clearInterval(timerInterval); 
             document.getElementById('sala-cine').style.display = 'none';
             document.getElementById('ticket-final').style.display = 'block';
             document.getElementById('ticket-pedido').textContent = pedidoActual;
