@@ -427,6 +427,13 @@
             const btnConfirmar = document.getElementById('btn-confirmar');
             const msjConfirmacion = document.getElementById('mensaje-confirmacion');
             btnConfirmar.disabled = true;
+
+            // SEGURO ANTI-INVITADOS
+            if (pedidoActual == "99999") {
+                alert("👀 ¡Modo Invitado! Esta cuenta es solo para visualizar la sala. Adquiere tu entrada oficial para poder separar tus asientos.");
+                btnConfirmar.disabled = false;
+                return;
+            }
             
             msjConfirmacion.textContent = "Verificando disponibilidad... ⏳";
             
