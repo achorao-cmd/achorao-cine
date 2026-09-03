@@ -165,7 +165,7 @@
                 ejecutarValidacionStaff(pedidoAValidar);
             }
 
-            // Habilitar la tecla "Enter" en los campos de login
+            // Habilitar la tecla "Enter"
             document.getElementById('pedido').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') { document.getElementById('btn-ingresar').click(); }
             });
@@ -174,9 +174,8 @@
             });
         };
 
-        // --- FUNCIONES DEL TEMPORIZADOR (AHORA 3 MINUTOS) ---
         function iniciarTemporizador() {
-            let tiempo = 180; // 3 minutos = 180 segundos
+            let tiempo = 180;
             const display = document.getElementById('tiempo-timer');
             document.getElementById('temporizador').style.display = 'inline-block';
 
@@ -219,12 +218,13 @@
                     
                     document.getElementById('val-pedido').textContent = clienteEncontrado[0];
                     document.getElementById('val-dni').textContent = clienteEncontrado[1];
-                    document.getElementById('val-entradas').textContent = clienteEncontrado[2];
-                    document.getElementById('val-snacks').textContent = clienteEncontrado[3] || "Ninguno";
-                    let asientosAsignados = String(clienteEncontrado[5] || "").trim();
+                    // ACTUALIZADO: Posiciones movidas por la columna Nombres
+                    document.getElementById('val-entradas').textContent = clienteEncontrado[3]; 
+                    document.getElementById('val-snacks').textContent = clienteEncontrado[4] || "Ninguno";
+                    let asientosAsignados = String(clienteEncontrado[6] || "").trim();
                     document.getElementById('val-asientos').textContent = asientosAsignados === "" ? "NO HA ELEGIDO" : asientosAsignados;
 
-                    let estadoCanje = String(clienteEncontrado[6] || "").trim().toUpperCase();
+                    let estadoCanje = String(clienteEncontrado[7] || "").trim().toUpperCase();
                     
                     if (estadoCanje === "CANJEADO") {
                         cajaEstado.style.color = "#e50914";
@@ -235,9 +235,6 @@
                         cajaEstado.innerHTML = "🟢 TICKET VÁLIDO - LISTO PARA INGRESAR";
                         zonaAccion.style.display = "block";
                         document.getElementById('btn-iniciar-quema').style.display = "block";
-                        document.getElementById('pin-staff').style.display = "none";
-                        document.getElementById('pin-staff').value = "";
-                        document.getElementById('msj-procesando').style.display = "none";
                     }
                 } else {
                     msjVal.textContent = "❌ ALERTA: PEDIDO FALSO O NO EXISTE";
@@ -272,27 +269,22 @@
         async function quemarEntradaSeguro() {
             const cajaEstado = document.getElementById('estado-ticket');
             const zonaAccion = document.getElementById('zona-accion');
-            
             try {
                 const urlQuemar = `${GOOGLE_SCRIPT_URL}?action=canjear&pedido=${pedidoAValidarGlobal}`;
                 const respuesta = await fetch(urlQuemar);
                 const texto = await respuesta.text();
-
                 if (texto === "OK" || texto.includes("OK")) {
                     cajaEstado.style.color = "#e50914";
                     cajaEstado.innerHTML = "⛔ ENTRADA CANJEADA CON ÉXITO";
                     zonaAccion.style.display = "none";
                     alert("¡Entrada marcada como USADA en el Excel!");
-                } else {
-                    throw new Error("No se pudo actualizar");
-                }
+                } else { throw new Error("No se pudo actualizar"); }
             } catch(e) {
                 alert("Hubo un error al guardar en Google Sheets. Intenta de nuevo.");
                 document.getElementById('btn-iniciar-quema').style.display = 'block';
                 document.getElementById('msj-procesando').style.display = 'none';
-                const inputPin = document.getElementById('pin-staff');
-                inputPin.disabled = false;
-                inputPin.value = "";
+                document.getElementById('pin-staff').disabled = false;
+                document.getElementById('pin-staff').value = "";
             }
         }
 
@@ -317,7 +309,8 @@
                 for (let i = 1; i < datos.length; i++) {
                     let pedidoFila = String(datos[i][0]).trim().toLowerCase(); 
                     let dniFila = String(datos[i][1]).trim().toLowerCase();    
-                    let asientosFila = String(datos[i][5] || "").trim();       
+                    // ACTUALIZADO: Buscando los asientos en el índice 6 (Columna G)
+                    let asientosFila = String(datos[i][6] || "").trim();       
                     if (asientosFila !== "") {
                         let asientosArray = asientosFila.split(",").map(a => a.trim());
                         todosLosAsientosOcupados = todosLosAsientosOcupados.concat(asientosArray);
@@ -329,9 +322,10 @@
 
                 if (encontrado) {
                     pedidoActual = datosCliente[0]; dniActual = datosCliente[1];
-                    entradasPermitidas = parseInt(datosCliente[2]) || 0;
-                    snacksActual = datosCliente[3] || "Sin combos";
-                    let misAsientosYaElegidos = String(datosCliente[5] || "").trim();
+                    // ACTUALIZADO: Entradas está en el índice 3 (Columna D)
+                    entradasPermitidas = parseInt(datosCliente[3]) || 0;
+                    snacksActual = datosCliente[4] || "Sin combos";
+                    let misAsientosYaElegidos = String(datosCliente[6] || "").trim();
 
                     document.getElementById('login-section').style.display = 'none';
                     if (misAsientosYaElegidos !== "") {
@@ -340,7 +334,7 @@
                         document.getElementById('sala-cine').style.display = 'block';
                         document.getElementById('info-cliente').innerHTML = `Tienes <b>${entradasPermitidas} entradas</b> por ubicar.`;
                         generarAsientos();
-                        iniciarTemporizador(); // Iniciamos la cuenta regresiva
+                        iniciarTemporizador();
                     } else { mostrarTicket("Solo Combos / Snacks"); }
                 } else {
                     mensajeEl.textContent = "Datos incorrectos o no encontrados."; 
@@ -356,7 +350,6 @@
             const contenedor = document.getElementById('contenedor-asientos');
             contenedor.innerHTML = ""; 
             const filas = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S'];
-            
             const asientosX = ['Q3','Q4','Q21','Q20','D20','D19','D18','D17','D16','D15','D14','D13','D12','D11','D10','D9','D8','D7','D6','D5','D4','S17','S16','S15','S14', 'R20','R19','R14','R13','R12','R11','R10','R5','R4','R17','R16','R15','R9','R8','R7', 'P3', 'P21'];
 
             filas.forEach(fila => {
@@ -377,21 +370,12 @@
                         else if (fila === 'S' && (num === 18 || num <= 13)) { div.classList.add('vacio'); }
                         else if (asientosX.includes(idAsiento)) { div.classList.add('nodisponible'); }
                         else { evaluarEstadoAsiento(div, idAsiento); }
-                    } 
-                    else {
+                    } else {
                         let esLateralHabilitado = ((fila >= 'D' && fila <= 'R') && (num === 4 || num === 5 || num === 19 || num === 20)) || ((fila >= 'E' && fila <= 'Q') && (num === 21 || num === 3));
                         if (esLateralHabilitado) {
-                            if (asientosX.includes(idAsiento)) {
-                                div.classList.add('nodisponible'); 
-                            } else {
-                                evaluarEstadoAsiento(div, idAsiento);
-                            }
+                            if (asientosX.includes(idAsiento)) { div.classList.add('nodisponible'); } else { evaluarEstadoAsiento(div, idAsiento); }
                         } else {
-                            if (fila === 'S' && (num === 21 || num === 20 || num === 19 || num === 5)) {
-                                div.classList.add('vacio');
-                            } else {
-                                div.classList.add('nodisponible');
-                            }
+                            if (fila === 'S' && (num === 21 || num === 20 || num === 19 || num === 5)) { div.classList.add('vacio'); } else { div.classList.add('nodisponible'); }
                         }
                     }
                     contenedor.appendChild(div);
@@ -400,11 +384,7 @@
         }
 
         function evaluarEstadoAsiento(div, idAsiento) {
-            if (todosLosAsientosOcupados.includes(idAsiento)) {
-                div.classList.add('ocupado');
-            } else {
-                div.onclick = () => seleccionarAsiento(div, idAsiento);
-            }
+            if (todosLosAsientosOcupados.includes(idAsiento)) { div.classList.add('ocupado'); } else { div.onclick = () => seleccionarAsiento(div, idAsiento); }
         }
 
         function seleccionarAsiento(elemento, idAsiento) {
@@ -415,20 +395,16 @@
                 if (asientosSeleccionados.length < entradasPermitidas) {
                     elemento.classList.add('seleccionado');
                     asientosSeleccionados.push(idAsiento);
-                } else {
-                    alert(`Solo puedes seleccionar ${entradasPermitidas} asientos.`);
-                }
+                } else { alert(`Solo puedes seleccionar ${entradasPermitidas} asientos.`); }
             }
             document.getElementById('btn-confirmar').style.display = (asientosSeleccionados.length === entradasPermitidas) ? 'inline-block' : 'none';
         }
 
-        // --- FUNCION ANTICHOQUE ---
         async function confirmarAsientos() {
             const btnConfirmar = document.getElementById('btn-confirmar');
             const msjConfirmacion = document.getElementById('mensaje-confirmacion');
             btnConfirmar.disabled = true;
 
-            // SEGURO ANTI-INVITADOS
             if (pedidoActual == "99999") {
                 alert("👀 ¡Modo Invitado! Esta cuenta es solo para visualizar la sala. Adquiere tu entrada oficial para poder separar tus asientos.");
                 btnConfirmar.disabled = false;
@@ -443,16 +419,12 @@
                 let asientosOcupadosAhora = [];
 
                 for (let i = 1; i < datosFrescos.length; i++) {
-                    let asientosFila = String(datosFrescos[i][5] || "").trim();
-                    if (asientosFila !== "") {
-                        asientosOcupadosAhora = asientosOcupadosAhora.concat(asientosFila.split(",").map(a => a.trim()));
-                    }
+                    let asientosFila = String(datosFrescos[i][6] || "").trim(); // ACTUALIZADO a índice 6
+                    if (asientosFila !== "") { asientosOcupadosAhora = asientosOcupadosAhora.concat(asientosFila.split(",").map(a => a.trim())); }
                 }
 
                 let conflicto = false;
-                for (let a of asientosSeleccionados) {
-                    if (asientosOcupadosAhora.includes(a)) { conflicto = true; }
-                }
+                for (let a of asientosSeleccionados) { if (asientosOcupadosAhora.includes(a)) { conflicto = true; } }
 
                 if (conflicto) {
                     alert("¡Uy! Alguien más acaba de ganar uno de los asientos que elegiste. Por favor, selecciona otros.");
@@ -471,11 +443,7 @@
                 const respuesta = await fetch(urlGuardar);
                 const texto = await respuesta.text();
 
-                if (texto === "OK" || texto.includes("OK")) {
-                    mostrarTicket(asientosString);
-                } else {
-                    throw new Error("No guardó correctamente");
-                }
+                if (texto === "OK" || texto.includes("OK")) { mostrarTicket(asientosString); } else { throw new Error("No guardó correctamente"); }
             } catch (error) {
                 msjConfirmacion.textContent = "Hubo un error al guardar. Intenta de nuevo.";
                 msjConfirmacion.style.color = "red";
